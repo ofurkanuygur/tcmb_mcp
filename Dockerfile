@@ -1,4 +1,4 @@
-# TCMB MCP Pro - Multi-stage Dockerfile
+# TCMB MCP - Multi-stage Dockerfile
 
 # Stage 1: Builder
 FROM python:3.10-slim AS builder
@@ -8,8 +8,9 @@ WORKDIR /app
 # Install uv for fast dependency installation
 RUN pip install --no-cache-dir uv
 
-# Copy only dependency files first (better caching)
+# Copy project files
 COPY pyproject.toml README.md ./
+COPY src ./src
 
 # Create virtual environment and install dependencies
 RUN uv venv /app/.venv

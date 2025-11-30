@@ -1,8 +1,14 @@
 # Smithery configuration for TCMB MCP
 # https://smithery.ai/docs/config
 
+runtime: "container"
+
+build:
+  dockerfile: "Dockerfile"
+  dockerBuildPath: "."
+
 startCommand:
-  type: stdio
+  type: "stdio"
   configSchema:
     type: object
     properties:
