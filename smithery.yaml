@@ -9,3 +9,33 @@ build:
 
 startCommand:
   type: "http"
+  configSchema:
+    type: object
+    properties:
+      cache_enabled:
+        type: boolean
+        default: true
+        title: "Enable Cache"
+        description: "Enable SQLite caching for better performance and reduced API calls"
+      cache_ttl_today:
+        type: integer
+        default: 3600
+        title: "Today's Rates Cache TTL"
+        description: "Cache duration for today's exchange rates in seconds (default: 1 hour)"
+      cache_ttl_historical:
+        type: integer
+        default: 31536000
+        title: "Historical Rates Cache TTL"
+        description: "Cache duration for historical rates in seconds (default: 1 year)"
+      debug:
+        type: boolean
+        default: false
+        title: "Debug Mode"
+        description: "Enable debug mode with verbose logging"
+      log_level:
+        type: string
+        enum: ["DEBUG", "INFO", "WARNING", "ERROR"]
+        default: "INFO"
+        title: "Log Level"
+        description: "Set the logging verbosity level"
+    additionalProperties: false

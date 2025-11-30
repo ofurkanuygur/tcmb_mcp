@@ -3,11 +3,13 @@
 import asyncio
 import json
 import os
+from typing import Annotated
 
 from mcp.server import Server
 from mcp.server.fastmcp import FastMCP
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool, ToolAnnotations
+from pydantic import Field
 
 from tcmb_mcp.core.config import get_settings
 from tcmb_mcp.core.container import cleanup, initialize
@@ -260,24 +262,55 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
 # Register tools for FastMCP (HTTP mode)
 @mcp.tool()
-async def tcmb_get_current_rates(currencies: list[str] | None = None) -> str:
-    """Güncel döviz kurlarını TCMB'den getirir."""
+async def tcmb_get_current_rates(
+    currencies: Annotated[
+        list[str] | None,
+        Field(description="Currency codes to filter, e.g. ['USD', 'EUR']. Returns all if empty.")
+    ] = None
+) -> str:
+    """Get current exchange rates from the Turkish Central Bank (TCMB).
+
+    Returns today's official exchange rates including buying/selling rates for forex and banknotes.
+    Data is sourced directly from TCMB's public XML API.
+    """
     await initialize()
     result = await get_current_rates(currencies=currencies)
     return json.dumps(result, ensure_ascii=False, indent=2, default=str)
 
 
 @mcp.tool()
-async def tcmb_get_historical_rates(date: str, currencies: list[str] | None = None) -> str:
-    """Belirli bir tarih için geçmiş döviz kurlarını getirir."""
+async def tcmb_get_historical_rates(
+    date: Annotated[
+        str,
+        Field(description="Date (YYYY-MM-DD or DD.MM.YYYY) or 'yesterday'/'dün'")
+    ],
+    currencies: Annotated[
+        list[str] | None,
+        Field(description="List of currency codes to filter (e.g., ['USD', 'EUR'])")
+    ] = None
+) -> str:
+    """Get historical exchange rates from TCMB for a specific date.
+
+    Retrieves archived exchange rates from TCMB. Data available since 1996.
+    Automatically handles Turkish holidays by falling back to the previous business day.
+    """
     await initialize()
     result = await get_historical_rates(date_str=date, currencies=currencies)
     return json.dumps(result, ensure_ascii=False, indent=2, default=str)
 
 
 @mcp.tool()
-async def tcmb_list_currencies(include_rates: bool = False) -> str:
-    """TCMB'de mevcut tüm para birimlerini listeler."""
+async def tcmb_list_currencies(
+    include_rates: Annotated[
+        bool,
+        Field(description="If true, includes current exchange rates for each currency")
+    ] = False
+) -> str:
+    """List all available currencies supported by TCMB.
+
+    Returns currency codes, names (in Turkish and English), and optionally current rates.
+    Useful for discovering which currencies can be queried.
+    """
     await initialize()
     result = await list_currencies(include_rates=include_rates)
     return json.dumps(result, ensure_ascii=False, indent=2, default=str)
@@ -285,12 +318,28 @@ async def tcmb_list_currencies(include_rates: bool = False) -> str:
 
 @mcp.tool()
 async def tcmb_convert_currency(
-    amount: float,
-    from_currency: str,
-    to_currency: str,
-    rate_type: str = "selling"
+    amount: Annotated[
+        float,
+        Field(description="Amount to convert (e.g., 1000)")
+    ],
+    from_currency: Annotated[
+        str,
+        Field(description="Source currency code (e.g., 'USD', 'EUR', 'TRY')")
+    ],
+    to_currency: Annotated[
+        str,
+        Field(description="Target currency code (e.g., 'TRY', 'USD', 'EUR')")
+    ],
+    rate_type: Annotated[
+        str,
+        Field(description="Rate type: 'buying' (alış) or 'selling' (satış)")
+    ] = "selling"
 ) -> str:
-    """Para birimlerini çevirir (TRY dahil)."""
+    """Convert between currencies using TCMB rates.
+
+    Supports conversion between any currencies including TRY.
+    Uses official TCMB exchange rates for accurate conversions.
+    """
     await initialize()
     result = await convert_currency(
         amount=amount,
@@ -303,12 +352,28 @@ async def tcmb_convert_currency(
 
 @mcp.tool()
 async def tcmb_get_rate_history(
-    currency: str,
-    start_date: str,
-    end_date: str,
-    rate_type: str = "selling"
+    currency: Annotated[
+        str,
+        Field(description="Currency code to get history for (e.g., 'USD', 'EUR')")
+    ],
+    start_date: Annotated[
+        str,
+        Field(description="Start date in YYYY-MM-DD format")
+    ],
+    end_date: Annotated[
+        str,
+        Field(description="End date in YYYY-MM-DD format")
+    ],
+    rate_type: Annotated[
+        str,
+        Field(description="Rate type: 'buying' or 'selling'")
+    ] = "selling"
 ) -> str:
-    """Para birimi kur geçmişi ve istatistikleri."""
+    """Get exchange rate history with statistics for a date range.
+
+    Returns daily rates and calculates statistics including min, max, average,
+    and percentage change over the period. Maximum range is 365 days.
+    """
     await initialize()
     result = await get_rate_history(
         currency=currency,
@@ -321,11 +386,24 @@ async def tcmb_get_rate_history(
 
 @mcp.tool()
 async def tcmb_compare_currencies(
-    target_currencies: list[str],
-    base_currency: str = "TRY",
-    days: int = 30
+    target_currencies: Annotated[
+        list[str],
+        Field(description="List of currency codes to compare (e.g., ['USD', 'EUR', 'GBP'])")
+    ],
+    base_currency: Annotated[
+        str,
+        Field(description="Base currency for comparison (default: 'TRY')")
+    ] = "TRY",
+    days: Annotated[
+        int,
+        Field(description="Number of days to look back for comparison (default: 30)")
+    ] = 30
 ) -> str:
-    """Birden fazla para birimini karşılaştırır."""
+    """Compare multiple currencies over a time period.
+
+    Shows current rates and historical performance statistics for multiple
+    currencies against a base currency. Useful for analyzing currency trends.
+    """
     await initialize()
     result = await compare_currencies(
         target_currencies=target_currencies,
@@ -374,10 +452,10 @@ def run_server() -> None:
         http_app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
-            allow_credentials=True,
+            allow_credentials=False,  # Public API - no credentials needed
             allow_methods=["GET", "POST", "OPTIONS"],
             allow_headers=["*"],
-            expose_headers=["mcp-session-id", "mcp-protocol-version"],
+            expose_headers=["mcp-protocol-version"],
             max_age=86400,
         )
 

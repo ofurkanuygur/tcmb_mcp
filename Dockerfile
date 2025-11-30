@@ -22,12 +22,20 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
+# Create non-root user for security
+RUN addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser /app
+
 # Add virtual environment to PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Environment variables for Smithery
 ENV MCP_TRANSPORT=http
 ENV PORT=8080
+
+# Switch to non-root user
+USER appuser
 
 # Clear entrypoint from base image
 ENTRYPOINT []
