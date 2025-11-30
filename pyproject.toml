@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "tcmb-mcp-pro"
+name = "tcmb-mcp"
 version = "1.0.0"
 description = "Production-ready MCP server for Turkish Central Bank (TCMB) exchange rates"
 readme = "README.md"
@@ -56,12 +56,12 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ofurkanuygur/tcmb-mcp-pro"
-Repository = "https://github.com/ofurkanuygur/tcmb-mcp-pro"
-Issues = "https://github.com/ofurkanuygur/tcmb-mcp-pro/issues"
+Homepage = "https://github.com/ofurkanuygur/tcmb_mcp"
+Repository = "https://github.com/ofurkanuygur/tcmb_mcp"
+Issues = "https://github.com/ofurkanuygur/tcmb_mcp/issues"
 
 [project.scripts]
-tcmb-mcp-pro = "tcmb_mcp.__main__:main"
+tcmb-mcp = "tcmb_mcp.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tcmb_mcp"]

@@ -1,17 +1,5 @@
-# Smithery deployment configuration for TCMB MCP Pro
-
-name: tcmb-mcp-pro
-version: 1.0.0
-description: |
-  Production-ready MCP server for Turkish Central Bank (TCMB) exchange rates.
-  Features: current/historical rates, currency conversion, rate history with statistics,
-  multi-currency comparison, smart SQLite caching, and Turkish holiday support.
-
-runtime: python
-python_version: "3.10"
-
-build:
-  dockerfile: Dockerfile
+# Smithery configuration for TCMB MCP
+# https://smithery.ai/docs/config
 
 startCommand:
   type: stdio
@@ -22,72 +10,16 @@ startCommand:
         type: boolean
         default: true
         description: "Enable SQLite caching for better performance"
-      cache_ttl_today:
-        type: integer
-        default: 3600
-        description: "Cache TTL for today's rates in seconds (default: 1 hour)"
-      cache_ttl_historical:
-        type: integer
-        default: 31536000
-        description: "Cache TTL for historical rates in seconds (default: 1 year)"
       debug:
         type: boolean
         default: false
         description: "Enable debug mode with verbose logging"
-      log_level:
-        type: string
-        enum: ["DEBUG", "INFO", "WARNING", "ERROR"]
-        default: "INFO"
-        description: "Logging level"
   commandFunction: |
     (config) => ({
       command: 'python',
       args: ['-m', 'tcmb_mcp'],
       env: {
         TCMB_CACHE_ENABLED: String(config.cache_enabled ?? true),
-        TCMB_CACHE_TTL_TODAY: String(config.cache_ttl_today ?? 3600),
-        TCMB_CACHE_TTL_HISTORICAL: String(config.cache_ttl_historical ?? 31536000),
-        TCMB_DEBUG: String(config.debug ?? false),
-        TCMB_LOG_LEVEL: config.log_level ?? 'INFO'
+        TCMB_DEBUG: String(config.debug ?? false)
       }
     })
-
-# Volume mount note for persistent cache
-# Production: docker run -v tcmb_data:/app/data tcmb-mcp-pro
-
-categories:
-  - finance
-  - data
-  - turkey
-
-keywords:
-  - tcmb
-  - exchange-rates
-  - currency
-  - turkish-lira
-  - forex
-  - döviz
-  - kur
-  - merkez-bankası
-  - mcp
-
-author:
-  name: Oktay Furkan Uygur
-  github: ofurkanuygur
-
-repository: https://github.com/ofurkanuygur/tcmb-mcp-pro
-license: MIT
-
-tools:
-  - name: tcmb_get_current_rates
-    description: Güncel döviz kurlarını getirir
-  - name: tcmb_get_historical_rates
-    description: Geçmiş tarih için kurları getirir
-  - name: tcmb_list_currencies
-    description: Mevcut para birimlerini listeler
-  - name: tcmb_convert_currency
-    description: Para birimi çevirisi yapar
-  - name: tcmb_get_rate_history
-    description: Tarih aralığında kur geçmişi ve istatistikler
-  - name: tcmb_compare_currencies
-    description: Birden fazla para birimini karşılaştırır

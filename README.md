@@ -1,4 +1,4 @@
-# TCMB MCP Pro
+# TCMB MCP
 
 Production-ready MCP (Model Context Protocol) server for Turkish Central Bank (TCMB) exchange rates.
 
@@ -18,8 +18,8 @@ Production-ready MCP (Model Context Protocol) server for Turkish Central Bank (T
 ### Using uv (recommended)
 
 ```bash
-git clone https://github.com/ofurkanuygur/tcmb-mcp-pro.git
-cd tcmb-mcp-pro
+git clone https://github.com/ofurkanuygur/tcmb_mcp.git
+cd tcmb_mcp
 uv venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 uv pip install -e .
@@ -28,13 +28,7 @@ uv pip install -e .
 ### Using pip
 
 ```bash
-pip install tcmb-mcp-pro
-```
-
-### Using Smithery
-
-```bash
-npx @smithery/cli install tcmb-mcp-pro
+pip install tcmb-mcp
 ```
 
 ## Usage
@@ -136,7 +130,7 @@ Dolar, Euro ve Sterlin'i karşılaştır
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `TCMB_CACHE_ENABLED` | `true` | Enable SQLite caching |
-| `TCMB_CACHE_DB_PATH` | `tcmb_cache.db` | Cache database path |
+| `TCMB_CACHE_DB_PATH` | `~/.cache/tcmb-mcp/tcmb_cache.db` | Cache database path |
 | `TCMB_CACHE_TTL_TODAY` | `3600` | Cache TTL for today (seconds) |
 | `TCMB_CACHE_TTL_HISTORICAL` | `31536000` | Cache TTL for historical (seconds) |
 | `TCMB_TIMEOUT` | `10` | API timeout (seconds) |
@@ -144,38 +138,19 @@ Dolar, Euro ve Sterlin'i karşılaştır
 | `TCMB_DEBUG` | `false` | Enable debug logging |
 | `TCMB_LOG_LEVEL` | `INFO` | Log level |
 
-### config.toml
-
-```toml
-[cache]
-enabled = true
-db_path = "tcmb_cache.db"
-ttl_today = 3600
-ttl_historical = 31536000
-
-[tcmb]
-timeout = 10
-max_retries = 3
-retry_delay = 1.0
-
-[general]
-debug = false
-log_level = "INFO"
-```
-
 ## Docker
 
 ### Build
 
 ```bash
-docker build -t tcmb-mcp-pro .
+docker build -t tcmb-mcp .
 ```
 
 ### Run
 
 ```bash
 # With persistent cache volume
-docker run -v tcmb_data:/app/data tcmb-mcp-pro
+docker run -v tcmb_data:/app/data tcmb-mcp
 ```
 
 ## Development
@@ -183,8 +158,8 @@ docker run -v tcmb_data:/app/data tcmb-mcp-pro
 ### Setup
 
 ```bash
-git clone https://github.com/ofurkanuygur/tcmb-mcp-pro.git
-cd tcmb-mcp-pro
+git clone https://github.com/ofurkanuygur/tcmb_mcp.git
+cd tcmb_mcp
 uv venv
 source .venv/bin/activate
 uv pip install -e ".[dev]"
@@ -229,10 +204,6 @@ mypy src/
 | `forex_selling` | Döviz Satış | Electronic transfer selling rate |
 | `banknote_buying` | Efektif Alış | Cash buying rate |
 | `banknote_selling` | Efektif Satış | Cash selling rate |
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
 
 ## Author
 
