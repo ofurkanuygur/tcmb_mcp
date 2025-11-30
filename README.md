@@ -2,7 +2,7 @@
 
 Production-ready MCP (Model Context Protocol) server for Turkish Central Bank (TCMB) exchange rates.
 
-[![Smithery](https://smithery.ai/badge/@ofurkanuygur/tcmb_mcp)](https://smithery.ai/server/@ofurkanuygur/tcmb_mcp)
+[![smithery badge](https://smithery.ai/badge/@ofurkanuygur/tcmb_mcp)](https://smithery.ai/server/@ofurkanuygur/tcmb_mcp)
 
 ## Features
 
