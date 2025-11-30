@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Tarih_Date Tarih="15.01.2024" Bulten_No="2024/10">
+    <Currency CrossOrder="0" Kod="USD" CurrencyCode="USD">
+        <Unit>1</Unit>
+        <Isim>ABD DOLARI</Isim>
+        <CurrencyName>US DOLLAR</CurrencyName>
+        <ForexBuying>30.2145</ForexBuying>
+        <ForexSelling>30.2678</ForexSelling>
+        <BanknoteBuying>30.1876</BanknoteBuying>
+        <BanknoteSelling>30.3123</BanknoteSelling>
+        <CrossRateUSD>1.0000</CrossRateUSD>
+        <CrossRateOther></CrossRateOther>
+    </Currency>
+    <Currency CrossOrder="1" Kod="EUR" CurrencyCode="EUR">
+        <Unit>1</Unit>
+        <Isim>EURO</Isim>
+        <CurrencyName>EURO</CurrencyName>
+        <ForexBuying>32.8765</ForexBuying>
+        <ForexSelling>32.9432</ForexSelling>
+        <BanknoteBuying>32.8234</BanknoteBuying>
+        <BanknoteSelling>33.0012</BanknoteSelling>
+        <CrossRateUSD>1.0881</CrossRateUSD>
+        <CrossRateOther></CrossRateOther>
+    </Currency>
+    <Currency CrossOrder="2" Kod="GBP" CurrencyCode="GBP">
+        <Unit>1</Unit>
+        <Isim>İNGİLİZ STERLİNİ</Isim>
+        <CurrencyName>POUND STERLING</CurrencyName>
+        <ForexBuying>38.3456</ForexBuying>
+        <ForexSelling>38.4234</ForexSelling>
+        <BanknoteBuying>38.2987</BanknoteBuying>
+        <BanknoteSelling>38.4876</BanknoteSelling>
+        <CrossRateUSD>1.2691</CrossRateUSD>
+        <CrossRateOther></CrossRateOther>
+    </Currency>
+    <Currency CrossOrder="3" Kod="CHF" CurrencyCode="CHF">
+        <Unit>1</Unit>
+        <Isim>İSVİÇRE FRANGI</Isim>
+        <CurrencyName>SWISS FRANK</CurrencyName>
+        <ForexBuying>35.1234</ForexBuying>
+        <ForexSelling>35.1876</ForexSelling>
+        <BanknoteBuying>35.0567</BanknoteBuying>
+        <BanknoteSelling>35.2543</BanknoteSelling>
+        <CrossRateUSD>1.1625</CrossRateUSD>
+        <CrossRateOther></CrossRateOther>
+    </Currency>
+    <Currency CrossOrder="4" Kod="JPY" CurrencyCode="JPY">
+        <Unit>100</Unit>
+        <Isim>JAPON YENİ</Isim>
+        <CurrencyName>JAPENESE YEN</CurrencyName>
+        <ForexBuying>20.3456</ForexBuying>
+        <ForexSelling>20.3987</ForexSelling>
+        <BanknoteBuying>20.2876</BanknoteBuying>
+        <BanknoteSelling>20.4567</BanknoteSelling>
+        <CrossRateUSD>0.6735</CrossRateUSD>
+        <CrossRateOther></CrossRateOther>
+    </Currency>
+</Tarih_Date>

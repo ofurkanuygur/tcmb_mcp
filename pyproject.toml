@@ -1,0 +1,87 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tcmb-mcp-pro"
+version = "1.0.0"
+description = "Production-ready MCP server for Turkish Central Bank (TCMB) exchange rates"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Oktay Furkan Uygur", email = "ofurkanuygur@gmail.com" }
+]
+keywords = [
+    "tcmb",
+    "exchange-rates",
+    "currency",
+    "turkish-lira",
+    "forex",
+    "mcp",
+    "model-context-protocol",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial",
+]
+dependencies = [
+    "mcp>=1.22.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.1.0",
+    "defusedxml>=0.7.0",
+    "python-dateutil>=2.8.0",
+    "aiosqlite>=0.19.0",
+    "structlog>=24.0.0",
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "respx>=0.20.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "types-python-dateutil>=2.8.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ofurkanuygur/tcmb-mcp-pro"
+Repository = "https://github.com/ofurkanuygur/tcmb-mcp-pro"
+Issues = "https://github.com/ofurkanuygur/tcmb-mcp-pro/issues"
+
+[project.scripts]
+tcmb-mcp-pro = "tcmb_mcp.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tcmb_mcp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+ignore_missing_imports = true
+warn_return_any = false
+warn_unused_ignores = true
+disallow_untyped_defs = false

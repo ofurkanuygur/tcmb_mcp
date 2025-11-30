@@ -1,0 +1,17 @@
+# TCMB MCP Pro - Configuration File
+
+[cache]
+enabled = true
+db_path = "tcmb_cache.db"
+ttl_today = 3600           # 1 hour for today's rates
+ttl_historical = 31536000  # 1 year for historical rates
+
+[tcmb]
+timeout = 10
+max_retries = 3
+retry_delay = 1.0
+request_delay = 0.1  # Delay between consecutive requests (rate limiting)
+
+[general]
+debug = false
+log_level = "INFO"
