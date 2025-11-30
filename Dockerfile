@@ -41,10 +41,16 @@ ENV PYTHONUNBUFFERED=1
 ENV TCMB_CACHE_DB_PATH=/app/data/tcmb_cache.db
 ENV TCMB_DEBUG=false
 ENV TCMB_LOG_LEVEL=INFO
+ENV MCP_TRANSPORT=sse
+ENV PORT=8000
+ENV HOST=0.0.0.0
+
+# Expose HTTP port
+EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD python -c "import tcmb_mcp; print('OK')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/sse')" || exit 1
 
-# Run the MCP server
+# Run the MCP server in HTTP mode
 CMD ["python", "-m", "tcmb_mcp"]

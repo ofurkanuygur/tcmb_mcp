@@ -1,6 +1,5 @@
-"""Entry point for running TCMB MCP Pro as a module."""
+"""Entry point for running TCMB MCP as a module."""
 
-import asyncio
 import sys
 
 
@@ -9,7 +8,7 @@ def main() -> None:
     from tcmb_mcp.server import run_server
 
     try:
-        asyncio.run(run_server())
+        run_server()
     except KeyboardInterrupt:
         sys.exit(0)
 

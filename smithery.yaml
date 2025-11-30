@@ -8,7 +8,7 @@ build:
   dockerBuildPath: "."
 
 startCommand:
-  type: "stdio"
+  type: "http"
   configSchema:
     type: object
     properties:
@@ -20,12 +20,3 @@ startCommand:
         type: boolean
         default: false
         description: "Enable debug mode with verbose logging"
-  commandFunction: |
-    (config) => ({
-      command: 'python',
-      args: ['-m', 'tcmb_mcp'],
-      env: {
-        TCMB_CACHE_ENABLED: String(config.cache_enabled ?? true),
-        TCMB_DEBUG: String(config.debug ?? false)
-      }
-    })

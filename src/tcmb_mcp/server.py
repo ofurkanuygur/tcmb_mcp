@@ -1,9 +1,13 @@
 """MCP Server for TCMB exchange rates."""
 
 import asyncio
+import os
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
+from mcp.server.sse import SseServerTransport
+from starlette.applications import Starlette
+from starlette.routing import Route
 from mcp.types import TextContent, Tool, ToolAnnotations
 
 from tcmb_mcp.core.config import get_settings
@@ -265,9 +269,9 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         return [TextContent(type="text", text=json.dumps(error_result, ensure_ascii=False))]
 
 
-async def run_server() -> None:
-    """Run the MCP server."""
-    logger.info("server_starting", version="1.0.0")
+async def run_stdio_server() -> None:
+    """Run the MCP server with stdio transport."""
+    logger.info("server_starting", version="1.0.0", transport="stdio")
 
     try:
         # Initialize services
@@ -291,5 +295,55 @@ async def run_server() -> None:
         logger.info("server_stopped")
 
 
+def create_sse_app() -> Starlette:
+    """Create Starlette app with SSE transport for HTTP mode."""
+    sse = SseServerTransport("/messages/")
+
+    async def handle_sse(request):
+        async with sse.connect_sse(
+            request.scope, request.receive, request._send
+        ) as streams:
+            await app.run(
+                streams[0],
+                streams[1],
+                app.create_initialization_options(),
+            )
+
+    async def handle_messages(request):
+        await sse.handle_post_message(request.scope, request.receive, request._send)
+
+    async def on_startup():
+        await initialize()
+        logger.info("server_starting", version="1.0.0", transport="sse")
+
+    async def on_shutdown():
+        await cleanup()
+        logger.info("server_stopped")
+
+    return Starlette(
+        debug=settings.debug,
+        routes=[
+            Route("/sse", endpoint=handle_sse),
+            Route("/messages/", endpoint=handle_messages, methods=["POST"]),
+        ],
+        on_startup=[on_startup],
+        on_shutdown=[on_shutdown],
+    )
+
+
+def run_server() -> None:
+    """Run the MCP server (auto-detect mode from environment)."""
+    transport = os.environ.get("MCP_TRANSPORT", "stdio").lower()
+
+    if transport == "sse" or transport == "http":
+        import uvicorn
+        port = int(os.environ.get("PORT", "8000"))
+        host = os.environ.get("HOST", "0.0.0.0")
+        sse_app = create_sse_app()
+        uvicorn.run(sse_app, host=host, port=port)
+    else:
+        asyncio.run(run_stdio_server())
+
+
 if __name__ == "__main__":
-    asyncio.run(run_server())
+    run_server()
