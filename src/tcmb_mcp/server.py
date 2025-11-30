@@ -1,13 +1,12 @@
 """MCP Server for TCMB exchange rates."""
 
 import asyncio
+import json
 import os
 
 from mcp.server import Server
+from mcp.server.fastmcp import FastMCP
 from mcp.server.stdio import stdio_server
-from mcp.server.sse import SseServerTransport
-from starlette.applications import Starlette
-from starlette.routing import Route
 from mcp.types import TextContent, Tool, ToolAnnotations
 
 from tcmb_mcp.core.config import get_settings
@@ -28,8 +27,15 @@ settings = get_settings()
 setup_logging(debug=settings.debug, log_level=settings.log_level)
 logger = get_logger(__name__)
 
-# Create MCP server
-app = Server("tcmb-mcp-pro")
+# Create FastMCP server for HTTP mode
+mcp = FastMCP(
+    name="tcmb-mcp",
+    json_response=False,
+    stateless_http=True,  # Smithery uses stateless
+)
+
+# Create standard Server for stdio mode
+app = Server("tcmb-mcp")
 
 
 # Tool annotations (MCP best practice)
@@ -180,87 +186,70 @@ TOOLS = [
 ]
 
 
+# Register tools for stdio server
 @app.list_tools()
 async def list_tools() -> list[Tool]:
     """List all available tools."""
     return TOOLS
 
 
+async def _call_tool_impl(name: str, arguments: dict) -> dict:
+    """Common tool implementation."""
+    if name == "tcmb_get_current_rates":
+        return await get_current_rates(
+            currencies=arguments.get("currencies"),
+        )
+    elif name == "tcmb_get_historical_rates":
+        return await get_historical_rates(
+            date_str=arguments["date"],
+            currencies=arguments.get("currencies"),
+        )
+    elif name == "tcmb_list_currencies":
+        return await list_currencies(
+            include_rates=arguments.get("include_rates", False),
+        )
+    elif name == "tcmb_convert_currency":
+        return await convert_currency(
+            amount=arguments["amount"],
+            from_currency=arguments["from_currency"],
+            to_currency=arguments["to_currency"],
+            rate_type=arguments.get("rate_type", "selling"),
+        )
+    elif name == "tcmb_get_rate_history":
+        return await get_rate_history(
+            currency=arguments["currency"],
+            start_date=arguments["start_date"],
+            end_date=arguments["end_date"],
+            rate_type=arguments.get("rate_type", "selling"),
+        )
+    elif name == "tcmb_compare_currencies":
+        return await compare_currencies(
+            target_currencies=arguments["target_currencies"],
+            base_currency=arguments.get("base_currency", "TRY"),
+            days=arguments.get("days", 30),
+        )
+    else:
+        return {"error": True, "message": f"Bilinmeyen tool: {name}"}
+
+
 @app.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-    """
-    Route tool calls to appropriate handlers.
-
-    Args:
-        name: Tool name
-        arguments: Tool arguments
-
-    Returns:
-        List of TextContent with results
-    """
+    """Route tool calls to appropriate handlers (stdio mode)."""
     logger.info("tool_called", tool=name, arguments=arguments)
 
     try:
-        result: dict
-
-        if name == "tcmb_get_current_rates":
-            result = await get_current_rates(
-                currencies=arguments.get("currencies"),
-            )
-
-        elif name == "tcmb_get_historical_rates":
-            result = await get_historical_rates(
-                date_str=arguments["date"],
-                currencies=arguments.get("currencies"),
-            )
-
-        elif name == "tcmb_list_currencies":
-            result = await list_currencies(
-                include_rates=arguments.get("include_rates", False),
-            )
-
-        elif name == "tcmb_convert_currency":
-            result = await convert_currency(
-                amount=arguments["amount"],
-                from_currency=arguments["from_currency"],
-                to_currency=arguments["to_currency"],
-                rate_type=arguments.get("rate_type", "selling"),
-            )
-
-        elif name == "tcmb_get_rate_history":
-            result = await get_rate_history(
-                currency=arguments["currency"],
-                start_date=arguments["start_date"],
-                end_date=arguments["end_date"],
-                rate_type=arguments.get("rate_type", "selling"),
-            )
-
-        elif name == "tcmb_compare_currencies":
-            result = await compare_currencies(
-                target_currencies=arguments["target_currencies"],
-                base_currency=arguments.get("base_currency", "TRY"),
-                days=arguments.get("days", 30),
-            )
-
-        else:
-            result = {"error": True, "message": f"Bilinmeyen tool: {name}"}
-
-        # Convert result to JSON string
-        import json
+        result = await _call_tool_impl(name, arguments)
         result_text = json.dumps(result, ensure_ascii=False, indent=2, default=str)
-
         logger.info("tool_completed", tool=name)
         return [TextContent(type="text", text=result_text)]
 
     except TCMBError as e:
         logger.error("tool_error", tool=name, error=str(e))
-        import json
         error_text = json.dumps(e.to_dict(), ensure_ascii=False, indent=2)
         return [TextContent(type="text", text=error_text)]
 
     except Exception as e:
         logger.exception("tool_unexpected_error", tool=name)
-        import json
         error_result = {
             "error": True,
             "code": "INTERNAL_ERROR",
@@ -269,15 +258,90 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         return [TextContent(type="text", text=json.dumps(error_result, ensure_ascii=False))]
 
 
+# Register tools for FastMCP (HTTP mode)
+@mcp.tool()
+async def tcmb_get_current_rates(currencies: list[str] | None = None) -> str:
+    """Güncel döviz kurlarını TCMB'den getirir."""
+    await initialize()
+    result = await get_current_rates(currencies=currencies)
+    return json.dumps(result, ensure_ascii=False, indent=2, default=str)
+
+
+@mcp.tool()
+async def tcmb_get_historical_rates(date: str, currencies: list[str] | None = None) -> str:
+    """Belirli bir tarih için geçmiş döviz kurlarını getirir."""
+    await initialize()
+    result = await get_historical_rates(date_str=date, currencies=currencies)
+    return json.dumps(result, ensure_ascii=False, indent=2, default=str)
+
+
+@mcp.tool()
+async def tcmb_list_currencies(include_rates: bool = False) -> str:
+    """TCMB'de mevcut tüm para birimlerini listeler."""
+    await initialize()
+    result = await list_currencies(include_rates=include_rates)
+    return json.dumps(result, ensure_ascii=False, indent=2, default=str)
+
+
+@mcp.tool()
+async def tcmb_convert_currency(
+    amount: float,
+    from_currency: str,
+    to_currency: str,
+    rate_type: str = "selling"
+) -> str:
+    """Para birimlerini çevirir (TRY dahil)."""
+    await initialize()
+    result = await convert_currency(
+        amount=amount,
+        from_currency=from_currency,
+        to_currency=to_currency,
+        rate_type=rate_type,
+    )
+    return json.dumps(result, ensure_ascii=False, indent=2, default=str)
+
+
+@mcp.tool()
+async def tcmb_get_rate_history(
+    currency: str,
+    start_date: str,
+    end_date: str,
+    rate_type: str = "selling"
+) -> str:
+    """Para birimi kur geçmişi ve istatistikleri."""
+    await initialize()
+    result = await get_rate_history(
+        currency=currency,
+        start_date=start_date,
+        end_date=end_date,
+        rate_type=rate_type,
+    )
+    return json.dumps(result, ensure_ascii=False, indent=2, default=str)
+
+
+@mcp.tool()
+async def tcmb_compare_currencies(
+    target_currencies: list[str],
+    base_currency: str = "TRY",
+    days: int = 30
+) -> str:
+    """Birden fazla para birimini karşılaştırır."""
+    await initialize()
+    result = await compare_currencies(
+        target_currencies=target_currencies,
+        base_currency=base_currency,
+        days=days,
+    )
+    return json.dumps(result, ensure_ascii=False, indent=2, default=str)
+
+
 async def run_stdio_server() -> None:
     """Run the MCP server with stdio transport."""
     logger.info("server_starting", version="1.0.0", transport="stdio")
 
     try:
-        # Initialize services
         await initialize()
 
-        # Run server
         async with stdio_server() as (read_stream, write_stream):
             await app.run(
                 read_stream,
@@ -290,57 +354,35 @@ async def run_stdio_server() -> None:
         raise
 
     finally:
-        # Cleanup
         await cleanup()
         logger.info("server_stopped")
-
-
-def create_sse_app() -> Starlette:
-    """Create Starlette app with SSE transport for HTTP mode."""
-    sse = SseServerTransport("/messages/")
-
-    async def handle_sse(request):
-        async with sse.connect_sse(
-            request.scope, request.receive, request._send
-        ) as streams:
-            await app.run(
-                streams[0],
-                streams[1],
-                app.create_initialization_options(),
-            )
-
-    async def handle_messages(request):
-        await sse.handle_post_message(request.scope, request.receive, request._send)
-
-    async def on_startup():
-        await initialize()
-        logger.info("server_starting", version="1.0.0", transport="sse")
-
-    async def on_shutdown():
-        await cleanup()
-        logger.info("server_stopped")
-
-    return Starlette(
-        debug=settings.debug,
-        routes=[
-            Route("/sse", endpoint=handle_sse),
-            Route("/messages/", endpoint=handle_messages, methods=["POST"]),
-        ],
-        on_startup=[on_startup],
-        on_shutdown=[on_shutdown],
-    )
 
 
 def run_server() -> None:
     """Run the MCP server (auto-detect mode from environment)."""
     transport = os.environ.get("MCP_TRANSPORT", "stdio").lower()
 
-    if transport == "sse" or transport == "http":
+    if transport in ("http", "sse", "streamable"):
         import uvicorn
-        port = int(os.environ.get("PORT", "8000"))
+        from starlette.middleware.cors import CORSMiddleware
+
+        port = int(os.environ.get("PORT", "8080"))
         host = os.environ.get("HOST", "0.0.0.0")
-        sse_app = create_sse_app()
-        uvicorn.run(sse_app, host=host, port=port)
+
+        # Create streamable HTTP app with CORS
+        http_app = mcp.streamable_http_app()
+        http_app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["*"],
+            expose_headers=["mcp-session-id", "mcp-protocol-version"],
+            max_age=86400,
+        )
+
+        logger.info("server_starting", version="1.0.0", transport="http", port=port)
+        uvicorn.run(http_app, host=host, port=port)
     else:
         asyncio.run(run_stdio_server())
 

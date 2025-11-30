@@ -2,6 +2,8 @@
 
 Production-ready MCP (Model Context Protocol) server for Turkish Central Bank (TCMB) exchange rates.
 
+[![Smithery](https://smithery.ai/badge/@ofurkanuygur/tcmb_mcp)](https://smithery.ai/server/@ofurkanuygur/tcmb_mcp)
+
 ## Features
 
 - **Current Rates**: Get today's exchange rates from TCMB
@@ -15,7 +17,15 @@ Production-ready MCP (Model Context Protocol) server for Turkish Central Bank (T
 
 ## Installation
 
-### Using uv (recommended)
+### Using Smithery (Recommended)
+
+Install directly via [Smithery](https://smithery.ai/server/@ofurkanuygur/tcmb_mcp):
+
+```bash
+npx -y @smithery/cli install @ofurkanuygur/tcmb_mcp --client claude
+```
+
+### Using uv (Local Development)
 
 ```bash
 git clone https://github.com/ofurkanuygur/tcmb_mcp.git
@@ -58,7 +68,11 @@ Add to your Claude Desktop config file:
 ### Running Manually
 
 ```bash
+# stdio mode (default, for Claude Desktop)
 python -m tcmb_mcp
+
+# HTTP mode (for Smithery deployment)
+MCP_TRANSPORT=http python -m tcmb_mcp
 ```
 
 ### Testing with MCP Inspector
@@ -137,21 +151,8 @@ Dolar, Euro ve Sterlin'i karşılaştır
 | `TCMB_MAX_RETRIES` | `3` | Maximum retry attempts |
 | `TCMB_DEBUG` | `false` | Enable debug logging |
 | `TCMB_LOG_LEVEL` | `INFO` | Log level |
-
-## Docker
-
-### Build
-
-```bash
-docker build -t tcmb-mcp .
-```
-
-### Run
-
-```bash
-# With persistent cache volume
-docker run -v tcmb_data:/app/data tcmb-mcp
-```
+| `MCP_TRANSPORT` | `stdio` | Transport mode (`stdio` or `http`) |
+| `PORT` | `8080` | HTTP server port (when using HTTP transport) |
 
 ## Development
 
@@ -188,6 +189,30 @@ ruff check src/
 mypy src/
 ```
 
+### Local HTTP Server Testing
+
+```bash
+# Start server in HTTP mode
+MCP_TRANSPORT=http python -m tcmb_mcp
+
+# Test with Smithery playground
+npx -y @smithery/cli playground --port 8080
+```
+
+## Docker
+
+### Build
+
+```bash
+docker build -t tcmb-mcp .
+```
+
+### Run
+
+```bash
+docker run -p 8080:8080 tcmb-mcp
+```
+
 ## API Reference
 
 ### TCMB URL Format
@@ -214,3 +239,4 @@ mypy src/
 
 - [TCMB](https://www.tcmb.gov.tr) for providing public exchange rate data
 - [Anthropic](https://anthropic.com) for the MCP protocol
+- [Smithery](https://smithery.ai) for MCP server hosting

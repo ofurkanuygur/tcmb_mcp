@@ -1,56 +1,36 @@
-# TCMB MCP - Multi-stage Dockerfile
+# TCMB MCP - Smithery Deployment Dockerfile
+# Using official uv image for efficient Python dependency management
 
-# Stage 1: Builder
-FROM python:3.10-slim AS builder
-
-WORKDIR /app
-
-# Install uv for fast dependency installation
-RUN pip install --no-cache-dir uv
-
-# Copy project files
-COPY pyproject.toml README.md ./
-COPY src ./src
-
-# Create virtual environment and install dependencies
-RUN uv venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH"
-RUN uv pip install .
-
-# Stage 2: Runtime
-FROM python:3.10-slim AS runtime
+FROM ghcr.io/astral-sh/uv:python3.12-alpine
 
 WORKDIR /app
 
-# Copy virtual environment from builder
-COPY --from=builder /app/.venv /app/.venv
+# Enable bytecode compilation and copy mode
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+
+# Install dependencies first (better caching)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev
+
+# Copy application code
+COPY . /app
+
+# Install the project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
+
+# Add virtual environment to PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy source code
-COPY src ./src
+# Environment variables for Smithery
+ENV MCP_TRANSPORT=http
+ENV PORT=8080
 
-# Create non-root user for security
-RUN useradd --create-home --shell /bin/bash appuser && \
-    mkdir -p /app/data && \
-    chown -R appuser:appuser /app
+# Clear entrypoint from base image
+ENTRYPOINT []
 
-USER appuser
-
-# Environment variables
-ENV PYTHONUNBUFFERED=1
-ENV TCMB_CACHE_DB_PATH=/app/data/tcmb_cache.db
-ENV TCMB_DEBUG=false
-ENV TCMB_LOG_LEVEL=INFO
-ENV MCP_TRANSPORT=sse
-ENV PORT=8000
-ENV HOST=0.0.0.0
-
-# Expose HTTP port
-EXPOSE 8000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/sse')" || exit 1
-
-# Run the MCP server in HTTP mode
+# Run the MCP server
 CMD ["python", "-m", "tcmb_mcp"]

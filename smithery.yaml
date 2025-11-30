@@ -1,5 +1,5 @@
-# Smithery configuration for TCMB MCP
-# https://smithery.ai/docs/config
+# Smithery deployment configuration for TCMB MCP
+# https://smithery.ai/docs/cookbooks/python_custom_container
 
 runtime: "container"
 
@@ -9,14 +9,3 @@ build:
 
 startCommand:
   type: "http"
-  configSchema:
-    type: object
-    properties:
-      cache_enabled:
-        type: boolean
-        default: true
-        description: "Enable SQLite caching for better performance"
-      debug:
-        type: boolean
-        default: false
-        description: "Enable debug mode with verbose logging"
